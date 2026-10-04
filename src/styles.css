@@ -146,23 +146,6 @@ button {
   text-align: center;
 }
 
-.tab-count--pulse {
-  animation: pulse 0.8s ease-out;
-}
-
-@keyframes pulse {
-  0% {
-    background: var(--accent);
-    color: var(--surface);
-    transform: scale(1.15);
-  }
-  100% {
-    background: var(--chip);
-    color: var(--muted);
-    transform: scale(1);
-  }
-}
-
 /* ---------- Список ---------- */
 
 .list-area {

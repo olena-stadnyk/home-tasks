@@ -1,5 +1,6 @@
 import { db } from './db';
 import type { Task } from './types';
+import { inboxToLater } from './migrations';
 import { toLocalDateKey } from '../shared/utils/date';
 
 export const BACKUP_FORMAT = 'home-tasks-backup';
@@ -9,7 +10,7 @@ export const BACKUP_FORMAT = 'home-tasks-backup';
  * Коли структура даних змінюється: збільшити BACKUP_VERSION і додати крок в `upgrades`,
  * щоб старі копії й далі відновлювались.
  */
-export const BACKUP_VERSION = 1;
+export const BACKUP_VERSION = 2;
 
 export interface Backup {
   format: typeof BACKUP_FORMAT;
@@ -20,10 +21,25 @@ export interface Backup {
 
 /**
  * Перетворення копії версії N у версію N + 1. Приклад на майбутнє (Tracker):
- *   1: (b) => ({ ...b, version: 2, data: { ...b.data, activities: [], activity_entries: [] } }),
+ *   2: (b) => ({ ...b, version: 3, data: { ...b.data, activities: [], activity_entries: [] } }),
  */
 type RawBackup = { version: number; [key: string]: unknown };
-const upgrades: Record<number, (backup: RawBackup) => RawBackup> = {};
+const upgrades: Record<number, (backup: RawBackup) => RawBackup> = {
+  // v1 → v2: Inbox прибрано, його справи переходять у «Пізніше» (так само, як при міграції бази).
+  1: (b) => {
+    const data = isObject(b.data) ? b.data : {};
+    const now = Date.now();
+    const tasks = Array.isArray(data.tasks)
+      ? data.tasks.map((t) => {
+          if (!isObject(t)) return t;
+          const copy = { ...t };
+          inboxToLater(copy, now);
+          return copy;
+        })
+      : data.tasks;
+    return { ...b, version: 2, data: { ...data, tasks } };
+  },
+};
 
 export class BackupError extends Error {}
 
@@ -112,8 +128,8 @@ function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
-const STATUSES = ['today', 'inbox', 'later', 'done'];
-const ACTIVE = ['today', 'inbox', 'later'];
+const STATUSES = ['today', 'later', 'done'];
+const ACTIVE = ['today', 'later'];
 const isNum = (v: unknown) => typeof v === 'number' && Number.isFinite(v);
 const isNumOrNull = (v: unknown) => v === null || isNum(v);
 

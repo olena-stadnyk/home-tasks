@@ -49,7 +49,7 @@ export async function completeTask(id: string): Promise<void> {
 export async function restoreTask(id: string): Promise<void> {
   const task = await db.tasks.get(id);
   if (!task || task.status !== 'done') return;
-  await patch(id, { status: task.prevStatus ?? 'inbox', completedAt: null, prevStatus: null });
+  await patch(id, { status: task.prevStatus ?? 'later', completedAt: null, prevStatus: null });
 }
 
 /** Порожня назва ігнорується — залишається попередня. */
@@ -73,8 +73,6 @@ export async function undeleteTask(id: string): Promise<void> {
 export function tasksInList(all: Task[], status: TaskStatus): Task[] {
   const list = all.filter((t) => t.deletedAt === null && t.status === status);
   switch (status) {
-    case 'inbox':
-      return list.sort((a, b) => b.movedAt - a.movedAt);
     case 'today':
     case 'later':
       return list.sort((a, b) => a.movedAt - b.movedAt);
@@ -84,7 +82,7 @@ export function tasksInList(all: Task[], status: TaskStatus): Task[] {
 }
 
 export function countByStatus(all: Task[]): Record<TaskStatus, number> {
-  const counts: Record<TaskStatus, number> = { today: 0, inbox: 0, later: 0, done: 0 };
+  const counts: Record<TaskStatus, number> = { today: 0, later: 0, done: 0 };
   for (const t of all) if (t.deletedAt === null) counts[t.status]++;
   return counts;
 }

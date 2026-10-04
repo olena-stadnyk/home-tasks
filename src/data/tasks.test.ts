@@ -23,99 +23,95 @@ describe('tasks', () => {
   it('назва обрізається, порожня ігнорується', async () => {
     expect(await addTask('   ', 'today')).toBeNull();
     expect(await db.tasks.count()).toBe(0);
-    const id = await addTask('  Купити хліб  ', 'inbox');
+    const id = await addTask('  Купити хліб  ', 'later');
     const task = await db.tasks.get(id!);
-    expect(task).toMatchObject({ title: 'Купити хліб', status: 'inbox', deletedAt: null });
+    expect(task).toMatchObject({ title: 'Купити хліб', status: 'later', deletedAt: null });
   });
 
   it('нова справа потрапляє саме в той список, у який її додали', async () => {
     await addTask('У сьогодні', 'today');
-    await addTask('В Inbox', 'inbox');
     await addTask('На пізніше', 'later');
     expect(await titles('today')).toEqual(['У сьогодні']);
-    expect(await titles('inbox')).toEqual(['В Inbox']);
     expect(await titles('later')).toEqual(['На пізніше']);
     expect(await titles('done')).toEqual([]);
   });
 
-  it('додана в «Сьогодні» чи «Пізніше» стає в кінець списку, в Inbox — нагору', async () => {
-    const a = (await addTask('A', 'inbox'))!;
-    await moveTask(a, 'today');
-    await addTask('Нова сьогодні', 'today');
-    expect(await titles('today')).toEqual(['A', 'Нова сьогодні']);
-
-    await addTask('L1', 'later');
+  it('Сьогодні і Пізніше: нові та перенесені справи стають у кінець списку', async () => {
+    await addTask('T1', 'today');
+    await addTask('T2', 'today');
+    const l = (await addTask('L1', 'later'))!;
     await addTask('L2', 'later');
+    expect(await titles('today')).toEqual(['T1', 'T2']);
     expect(await titles('later')).toEqual(['L1', 'L2']);
 
-    await addTask('I1', 'inbox');
-    await addTask('I2', 'inbox');
-    expect(await titles('inbox')).toEqual(['I2', 'I1']);
+    await moveTask(l, 'today');
+    expect(await titles('today')).toEqual(['T1', 'T2', 'L1']);
+    expect(await titles('later')).toEqual(['L2']);
   });
 
-  it('справу, додану в «Сьогодні», після виконання і повернення видно знову в «Сьогодні»', async () => {
+  it('перенесення today ↔ later в обидва боки', async () => {
     const id = (await addTask('A', 'today'))!;
-    await completeTask(id);
-    await restoreTask(id);
-    expect(await titles('today')).toEqual(['A']);
+    await moveTask(id, 'later');
+    expect((await db.tasks.get(id))!.status).toBe('later');
+    await moveTask(id, 'today');
+    expect((await db.tasks.get(id))!.status).toBe('today');
   });
 
-  it('Inbox: нові зверху; Сьогодні: у порядку перенесення', async () => {
-    const a = (await addTask('A', 'inbox'))!;
-    const b = (await addTask('B', 'inbox'))!;
-    const c = (await addTask('C', 'inbox'))!;
-    expect(await titles('inbox')).toEqual(['C', 'B', 'A']);
-
-    await moveTask(b, 'today');
-    await moveTask(a, 'today');
-    await moveTask(c, 'today');
-    expect(await titles('today')).toEqual(['B', 'A', 'C']);
-  });
-
-  it('виконання і повернення: справа стає на попереднє місце у своєму списку', async () => {
-    const a = (await addTask('A', 'inbox'))!;
-    const b = (await addTask('B', 'inbox'))!;
-    const c = (await addTask('C', 'inbox'))!;
-    for (const id of [a, b, c]) await moveTask(id, 'later');
+  it('справу з «Пізніше» можна виконати напряму і вона повертається в «Пізніше»', async () => {
+    await addTask('A', 'later');
+    const b = (await addTask('B', 'later'))!;
+    await addTask('C', 'later');
 
     await completeTask(b);
     expect(await titles('later')).toEqual(['A', 'C']);
+    expect(await titles('today')).toEqual([]);
     expect(await titles('done')).toEqual(['B']);
+    expect((await db.tasks.get(b))!.prevStatus).toBe('later');
 
     await restoreTask(b);
     expect(await titles('later')).toEqual(['A', 'B', 'C']);
     expect(await titles('done')).toEqual([]);
   });
 
+  it('справа з «Сьогодні» після виконання і повернення знову в «Сьогодні» на своєму місці', async () => {
+    await addTask('A', 'today');
+    const b = (await addTask('B', 'today'))!;
+    await addTask('C', 'today');
+    await completeTask(b);
+    await restoreTask(b);
+    expect(await titles('today')).toEqual(['A', 'B', 'C']);
+  });
+
   it('Готово: останні виконані зверху', async () => {
-    const a = (await addTask('A', 'inbox'))!;
-    const b = (await addTask('B', 'inbox'))!;
+    const a = (await addTask('A', 'today'))!;
+    const b = (await addTask('B', 'later'))!;
     await completeTask(a);
     await completeTask(b);
     expect(await titles('done')).toEqual(['B', 'A']);
   });
 
   it('видалення м\'яке і скасовується', async () => {
-    const a = (await addTask('A', 'inbox'))!;
+    const a = (await addTask('A', 'today'))!;
     await deleteTask(a);
-    expect(await titles('inbox')).toEqual([]);
+    expect(await titles('today')).toEqual([]);
     expect((await db.tasks.get(a))!.deletedAt).not.toBeNull();
     await undeleteTask(a);
-    expect(await titles('inbox')).toEqual(['A']);
+    expect(await titles('today')).toEqual(['A']);
   });
 
   it('перейменування: порожня назва залишає попередню', async () => {
-    const a = (await addTask('A', 'inbox'))!;
+    const a = (await addTask('A', 'today'))!;
     await renameTask(a, '  ');
     expect((await db.tasks.get(a))!.title).toBe('A');
     await renameTask(a, ' Б ');
     expect((await db.tasks.get(a))!.title).toBe('Б');
   });
 
-  it('лічильники не враховують видалені', async () => {
-    const a = (await addTask('A', 'inbox'))!;
-    await addTask('B', 'inbox');
+  it('лічильники: три списки, видалені не враховуються', async () => {
+    const a = (await addTask('A', 'today'))!;
+    await addTask('B', 'today');
+    await addTask('C', 'later');
     await deleteTask(a);
-    expect(countByStatus(await db.tasks.toArray())).toEqual({ today: 0, inbox: 1, later: 0, done: 0 });
+    expect(countByStatus(await db.tasks.toArray())).toEqual({ today: 1, later: 1, done: 0 });
   });
 });
