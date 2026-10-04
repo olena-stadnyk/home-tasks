@@ -165,6 +165,7 @@ button {
   align-items: flex-start;
 }
 
+/* Зона натискання 56×52 — більша за 44×44; видимий кружечок — усередині неї. */
 .check {
   flex: none;
   width: 56px;
@@ -175,10 +176,11 @@ button {
 
 .check-circle {
   position: relative;
-  width: 22px;
-  height: 22px;
+  /* На телефоні трохи більший, на широкому екрані — 22px (див. нижче). */
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  border: 1.5px solid var(--circle);
+  border: 1.75px solid var(--circle);
   transition:
     background-color 0.2s,
     border-color 0.2s;
@@ -194,13 +196,14 @@ button {
 .task--done .check-circle::after {
   content: '';
   position: absolute;
-  left: 6.5px;
-  top: 3px;
-  width: 5px;
-  height: 10px;
+  /* Пропорційно до кружечка, щоб галочка була по центру за будь-якого розміру. */
+  left: 50%;
+  top: 45%;
+  width: 26%;
+  height: 50%;
   border: solid var(--surface);
   border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
+  transform: translate(-50%, -50%) rotate(45deg);
 }
 
 .task-title {
@@ -519,6 +522,12 @@ button {
 
   .list-area {
     overflow: visible;
+  }
+
+  .check-circle {
+    width: 22px;
+    height: 22px;
+    border-width: 1.5px;
   }
 
   .panel-inline {
