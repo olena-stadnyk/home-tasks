@@ -17,8 +17,8 @@ beforeEach(async () => {
 
 describe('backup', () => {
   it('копія містить формат, версію і дату; опис рахує тільки невидалені справи', async () => {
-    await addTask('A');
-    const b = (await addTask('B'))!;
+    await addTask('A', 'inbox');
+    const b = (await addTask('B', 'inbox'))!;
     await deleteTask(b);
 
     const backup = parseBackup(JSON.stringify(await createBackup()));
@@ -28,12 +28,12 @@ describe('backup', () => {
   });
 
   it('відновлення повністю замінює поточні дані станом із копії', async () => {
-    const a = (await addTask('Старе'))!;
+    const a = (await addTask('Старе', 'inbox'))!;
     const text = JSON.stringify(await createBackup());
 
     // Після копії: змінена назва і нова справа — обидві зміни мають зникнути.
     await renameTask(a, 'Нове');
-    const later = (await addTask('Додано після копії'))!;
+    const later = (await addTask('Додано після копії', 'inbox'))!;
 
     await restoreBackup(parseBackup(text));
     expect(await db.tasks.count()).toBe(1);
@@ -42,7 +42,7 @@ describe('backup', () => {
   });
 
   it('внутрішнє об\'єднання (для майбутньої синхронізації) лишає новішу версію', async () => {
-    const a = (await addTask('Старе'))!;
+    const a = (await addTask('Старе', 'inbox'))!;
     const text = JSON.stringify(await createBackup());
     await renameTask(a, 'Нове');
 

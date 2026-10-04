@@ -43,6 +43,7 @@ export function TaskRow({ task, open, onToggle, onClose, wide, finePointer }: Pr
   return (
     <li
       ref={liRef}
+      data-task-id={task.id}
       className={`task${done ? ' task--done' : ''}${completing ? ' task--completing' : ''}${open ? ' task--open' : ''}`}
     >
       <div className="task-row">

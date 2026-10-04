@@ -1,8 +1,16 @@
 import { useState, type FormEvent } from 'react';
 import { addTask } from '../../data/tasks';
+import type { ActiveStatus } from '../../data/types';
 
-/** Швидке додавання. Справа завжди йде в Inbox; поле лишається активним для наступної. */
-export function AddTaskInput({ autoFocus }: { autoFocus: boolean }) {
+interface Props {
+  /** Список, у який додається справа, — той, що зараз відкритий. */
+  status: ActiveStatus;
+  autoFocus: boolean;
+  onAdded: (id: string) => void;
+}
+
+/** Швидке додавання у відкритий список; поле лишається активним для наступної справи. */
+export function AddTaskInput({ status, autoFocus, onAdded }: Props) {
   const [value, setValue] = useState('');
 
   const submit = (e: FormEvent) => {
@@ -11,7 +19,9 @@ export function AddTaskInput({ autoFocus }: { autoFocus: boolean }) {
     // Очищуємо одразу, не чекаючи бази, — інакше швидко надрукована наступна справа злипнеться з попередньою.
     const title = value;
     setValue('');
-    addTask(title).catch(() => setValue((current) => current || title));
+    addTask(title, status)
+      .then((id) => id && onAdded(id))
+      .catch(() => setValue((current) => current || title));
   };
 
   return (

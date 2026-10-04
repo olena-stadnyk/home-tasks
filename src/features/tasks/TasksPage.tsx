@@ -27,6 +27,17 @@ export function TasksPage({ list }: { list: TaskStatus }) {
     if (openId && all && !tasks.some((t) => t.id === openId)) setOpenId(null);
   });
 
+  // Щойно додана справа має бути видна, навіть якщо список довгий (у «Сьогодні» і «Пізніше» вона стає в кінець).
+  const [addedId, setAddedId] = useState<string | null>(null);
+  useEffect(() => setAddedId(null), [list]);
+  useEffect(() => {
+    if (!addedId) return;
+    const el = document.querySelector(`[data-task-id="${addedId}"]`);
+    if (!el) return;
+    el.scrollIntoView({ block: 'nearest' });
+    setAddedId(null);
+  });
+
   const printable = list !== 'done' && tasks.length > 0;
 
   return (
@@ -41,7 +52,7 @@ export function TasksPage({ list }: { list: TaskStatus }) {
           )
         }
       />
-      <AddTaskInput autoFocus={wide && finePointer} />
+      {list !== 'done' && <AddTaskInput status={list} autoFocus={wide && finePointer} onAdded={setAddedId} />}
       <TaskTabs current={list} counts={counts} />
       <main className="list-area">
         {all &&

@@ -13,15 +13,15 @@ async function patch(id: string, changes: Partial<Task>): Promise<void> {
   await db.tasks.update(id, { ...changes, updatedAt: now() });
 }
 
-/** Нова справа завжди потрапляє в Inbox. Повертає id або null для порожньої назви. */
-export async function addTask(title: string): Promise<string | null> {
+/** Додає справу в указаний список. Повертає id або null для порожньої назви. */
+export async function addTask(title: string, status: ActiveStatus): Promise<string | null> {
   const clean = title.trim();
   if (!clean) return null;
   const t = now();
   const task: Task = {
     id: newId(),
     title: clean,
-    status: 'inbox',
+    status,
     createdAt: t,
     movedAt: t,
     completedAt: null,
