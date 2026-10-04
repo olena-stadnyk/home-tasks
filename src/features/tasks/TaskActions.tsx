@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ACTIVE_STATUSES, type Task } from '../../data/types';
-import { deleteTask, moveTask, renameTask, undeleteTask } from '../../data/tasks';
+import { deleteTask, moveTask, renameTask, restoreTask, undeleteTask } from '../../data/tasks';
 import { useToast } from '../../shared/ui/Toast';
 import { LIST_LABELS } from './lists';
 
@@ -11,7 +11,10 @@ interface Props {
   autoFocusTitle: boolean;
 }
 
-/** Вміст панелі дій: назва (редагується), переміщення, видалення. Однаковий для телефона й комп'ютера. */
+/**
+ * Вміст панелі дій: назва (редагується), переміщення або «Повернути» для виконаної, видалення.
+ * Однаковий для телефона й комп'ютера.
+ */
 export function TaskActions({ task, onDone, autoFocusTitle }: Props) {
   const toast = useToast();
   const done = task.status === 'done';
@@ -58,7 +61,21 @@ export function TaskActions({ task, onDone, autoFocusTitle }: Props) {
         />
       )}
       <div className="actions-bar">
-        {!done && (
+        {done ? (
+          <div className="actions-moves">
+            {/* Повертає в список, з якого справу виконали (те саме, що натиснути заповнений кружечок). */}
+            <button
+              type="button"
+              className="move-btn"
+              onClick={() => {
+                void restoreTask(task.id);
+                onDone();
+              }}
+            >
+              Повернути
+            </button>
+          </div>
+        ) : (
           <div className="actions-moves">
             {ACTIVE_STATUSES.filter((s) => s !== task.status).map((s) => (
               <button

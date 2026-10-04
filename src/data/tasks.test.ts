@@ -107,6 +107,71 @@ describe('tasks', () => {
     expect((await db.tasks.get(a))!.title).toBe('Б');
   });
 
+  describe('повернення виконаної справи', () => {
+    it('виконана з «Сьогодні» повертається в «Сьогодні»', async () => {
+      const id = (await addTask('A', 'today'))!;
+      await completeTask(id);
+      expect((await db.tasks.get(id))!).toMatchObject({ status: 'done', prevStatus: 'today' });
+      await restoreTask(id);
+      expect((await db.tasks.get(id))!).toMatchObject({ status: 'today', prevStatus: null, completedAt: null });
+      expect(await titles('done')).toEqual([]);
+    });
+
+    it('виконана з «Пізніше» повертається в «Пізніше», а не в «Сьогодні»', async () => {
+      const id = (await addTask('A', 'later'))!;
+      await completeTask(id);
+      await restoreTask(id);
+      expect((await db.tasks.get(id))!.status).toBe('later');
+      expect(await titles('today')).toEqual([]);
+    });
+
+    it('справа, яку перенесли today → later і виконали, повертається в «Пізніше»', async () => {
+      const id = (await addTask('A', 'today'))!;
+      await moveTask(id, 'later');
+      await completeTask(id);
+      await restoreTask(id);
+      expect((await db.tasks.get(id))!.status).toBe('later');
+    });
+
+    it('повертається на своє місце навіть через довгий час і після інших дій', async () => {
+      await addTask('A', 'today');
+      const b = (await addTask('B', 'today'))!;
+      await addTask('C', 'today');
+      await completeTask(b);
+      // Тим часом: нові справи, інші виконані — «Скасувати» давно зникло.
+      await addTask('D', 'today');
+      const e = (await addTask('E', 'later'))!;
+      await completeTask(e);
+      expect(await titles('done')).toEqual(['E', 'B']);
+
+      await restoreTask(b);
+      expect(await titles('today')).toEqual(['A', 'B', 'C', 'D']);
+      expect(await titles('done')).toEqual(['E']);
+    });
+
+    it('кілька виконаних з різних списків повертаються кожна у свій', async () => {
+      const t = (await addTask('T', 'today'))!;
+      const l = (await addTask('L', 'later'))!;
+      await completeTask(t);
+      await completeTask(l);
+      await restoreTask(l);
+      await restoreTask(t);
+      expect(await titles('today')).toEqual(['T']);
+      expect(await titles('later')).toEqual(['L']);
+    });
+
+    it('повторне повернення або повернення невиконаної справи нічого не змінює', async () => {
+      const id = (await addTask('A', 'later'))!;
+      await restoreTask(id);
+      expect((await db.tasks.get(id))!.status).toBe('later');
+      await completeTask(id);
+      await restoreTask(id);
+      const before = await db.tasks.get(id);
+      await restoreTask(id);
+      expect(await db.tasks.get(id)).toEqual(before);
+    });
+  });
+
   it('лічильники: три списки, видалені не враховуються', async () => {
     const a = (await addTask('A', 'today'))!;
     await addTask('B', 'today');
