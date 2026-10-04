@@ -38,7 +38,9 @@ export function TasksPage({ list }: { list: TaskStatus }) {
     setAddedId(null);
   });
 
-  const printable = list !== 'done' && tasks.length > 0;
+  // Кнопка друку — лише на широкому екрані; на телефоні друк не потрібен.
+  // Версія для друку (PrintView і print stylesheet) лишається, тож Ctrl+P / меню браузера працюють як раніше.
+  const printable = wide && list !== 'done' && tasks.length > 0;
 
   return (
     <div className="app">
