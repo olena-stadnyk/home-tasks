@@ -12,8 +12,8 @@ interface Props {
 }
 
 /**
- * Вміст панелі дій: назва (редагується), переміщення або «Повернути» для виконаної, видалення.
- * Однаковий для телефона й комп'ютера.
+ * Вміст панелі дій. Для активної справи (меню ⋯): редагування назви, другорядне «Перемістити», видалення.
+ * Для виконаної: «Повернути» і видалення. Однаковий для телефона й комп'ютера.
  */
 export function TaskActions({ task, onDone, autoFocusTitle }: Props) {
   const toast = useToast();
@@ -76,21 +76,20 @@ export function TaskActions({ task, onDone, autoFocusTitle }: Props) {
             </button>
           </div>
         ) : (
-          <div className="actions-moves">
-            {ACTIVE_STATUSES.filter((s) => s !== task.status).map((s) => (
-              <button
-                key={s}
-                type="button"
-                className="move-btn"
-                onClick={() => {
-                  void moveTask(task.id, s);
-                  onDone();
-                }}
-              >
-                {LIST_LABELS[s]}
-              </button>
-            ))}
-          </div>
+          // Другорядна дія — щоб виправити випадково вибраний список.
+          ACTIVE_STATUSES.filter((s) => s !== task.status).map((s) => (
+            <button
+              key={s}
+              type="button"
+              className="secondary-btn"
+              onClick={() => {
+                void moveTask(task.id, s);
+                onDone();
+              }}
+            >
+              Перемістити в «{LIST_LABELS[s]}»
+            </button>
+          ))
         )}
         <button type="button" className="delete-btn" onClick={remove}>
           Видалити

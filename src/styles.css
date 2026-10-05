@@ -165,6 +165,29 @@ button {
   align-items: flex-start;
 }
 
+/* «Сьогодні» / «Пізніше»: кружечок і текст — одна кнопка «виконати». */
+.task-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.task-main .task-title {
+  padding-right: 8px;
+}
+
+/* Меню ⋯ у рядку: зона натискання 44×52. */
+.more-btn {
+  flex: none;
+  width: 44px;
+  min-height: 52px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+
 /* Зона натискання 56×52 — більша за 44×44; видимий кружечок — усередині неї. */
 .check {
   flex: none;
@@ -216,7 +239,8 @@ button {
   overflow-wrap: anywhere;
 }
 
-.task + .task .task-title {
+.task + .task .task-title,
+.task + .task .more-btn {
   border-top: 1px solid var(--line);
 }
 
@@ -379,6 +403,13 @@ button {
   font-size: 15px;
 }
 
+/* Другорядна дія в меню ⋯ («Перемістити в …») — тихий текст, не основна кнопка. */
+.secondary-btn {
+  align-self: flex-start;
+  padding: 12px 2px;
+  font-size: 15px;
+}
+
 /* ---------- Меню ⋯ ---------- */
 
 .menu {
@@ -412,7 +443,8 @@ button {
   position: fixed;
   left: 50%;
   bottom: calc(80px + env(safe-area-inset-bottom));
-  z-index: 30;
+  /* Нижче за панель дій (20): відкрита панель не перекривається повідомленням. */
+  z-index: 18;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
@@ -559,6 +591,12 @@ button {
     padding: 8px 4px;
   }
 
+  .secondary-btn {
+    align-self: center;
+    margin-right: auto;
+    padding: 8px 4px;
+  }
+
   .toast {
     bottom: 28px;
   }
@@ -574,8 +612,12 @@ button {
     filter: brightness(0.96);
   }
 
-  .task-title:hover {
-    color: var(--accent);
+  .task-main:hover .check-circle {
+    border-color: var(--accent);
+  }
+
+  .more-btn:hover {
+    color: var(--text);
   }
 
   .task--done .task-title:hover {
