@@ -18,10 +18,17 @@ interface Props {
 
 const COMPLETE_DELAY_MS = 450;
 
+const noop = () => {};
+/**
+ * Нативний (не React) обробник: Chrome вважає елемент «натискабельним» лише тоді, коли обробник
+ * висить на ньому самому, і тоді не переносить дотик у порожнє місце на сусідню кнопку.
+ */
+const swallowTaps = (el: HTMLElement | null) => el?.addEventListener('click', noop);
+
 /**
  * Рядок справи.
- * «Сьогодні» / «Пізніше»: увесь рядок (кружечок і текст) — одна дія «виконати»; редагування,
- * видалення і переміщення — у меню ⋯.
+ * «Сьогодні» / «Пізніше»: кружечок і текст назви — одна дія «виконати» (порожнє місце рядка неактивне);
+ * редагування, видалення і переміщення — у меню ⋯.
  * «Готово»: кружечок повертає справу, текст відкриває панель з «Повернути» і «Видалити».
  */
 export function TaskRow({ task, open, onToggle, onClose, wide, finePointer }: Props) {
@@ -71,6 +78,8 @@ export function TaskRow({ task, open, onToggle, onClose, wide, finePointer }: Pr
             </span>
             <span className="task-title">{task.title}</span>
           </button>
+          {/* Неактивне порожнє місце: власний обробник, щоб Chrome не «підтягував» дотик до кнопки «виконати». */}
+          <span className="task-gap" aria-hidden="true" ref={swallowTaps} />
           <button
             type="button"
             className="more-btn"

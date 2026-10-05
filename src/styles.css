@@ -165,9 +165,12 @@ button {
   align-items: flex-start;
 }
 
-/* «Сьогодні» / «Пізніше»: кружечок і текст — одна кнопка «виконати». */
+/*
+ * «Сьогодні» / «Пізніше»: кнопка «виконати» — тільки кружечок і текст назви (на всю висоту рядка).
+ * Порожнє місце між текстом і ⋯ не реагує на натискання.
+ */
 .task-main {
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
   display: flex;
   align-items: flex-start;
@@ -175,7 +178,18 @@ button {
 }
 
 .task-main .task-title {
-  padding-right: 8px;
+  flex: 0 1 auto;
+  padding-right: 12px;
+}
+
+/*
+ * Порожнє місце між текстом і ⋯. Неактивне, але перехоплює натискання: інакше Chrome на сенсорному
+ * екрані «підтягує» неточний дотик до найближчої кнопки і справа виконується.
+ */
+.task-gap {
+  flex: 1;
+  align-self: stretch;
+  min-height: 52px;
 }
 
 /* Меню ⋯ у рядку: зона натискання 44×52. */
@@ -240,6 +254,7 @@ button {
 }
 
 .task + .task .task-title,
+.task + .task .task-gap,
 .task + .task .more-btn {
   border-top: 1px solid var(--line);
 }
